@@ -1,5 +1,6 @@
 """Implements object oriented modelling for Data Access Layer."""
 import os
+import hashlib
 import sqlite3 as db_api
 
 
@@ -9,6 +10,29 @@ def date_to_dict(date):
     month = date // 10 ** 2 - year * 10 ** 2
     day = date - (date // 10 ** 2) * 10 ** 2
     return (year, month, day)
+
+
+def store_password(password):
+    """Store password and salt."""
+    salt = os.urandom(32)
+    key = hashlib.pbkdf2_hmac('sha256',
+                              password.encode('utf-8'),
+                              salt, 100000)
+    return salt+key
+
+
+def get_password(key):
+    """Return tuple salt + password."""
+    return (key[:32], key[32:])
+
+
+def match_password(password, key):
+    """Return true if password is the same as the hashed password."""
+    salt, hashed = key
+    key = hashlib.pbkdf2_hmac('sha256',
+                              password.encode('utf-8'),
+                              salt, 100000)
+    return key == hashed
 
 
 def date_to_sql(date):
@@ -65,7 +89,8 @@ class Table:
         "real": "real",
         "text": "text",
         "date": "integer",
-        "money": "integer"
+        "money": "integer",
+        "pwd": "blob"
     }
 
     data_conversor = {
@@ -74,7 +99,8 @@ class Table:
         "real": (float, float),
         "text": (lambda x: x, lambda x: x),
         "date": (date_to_sql, date_to_dict),
-        "money": (lambda x: int(x*100), lambda x: x/100)
+        "money": (lambda x: int(x*100), lambda x: x/100),
+        "pwd": (store_password, get_password)
     }
 
     def __init__(self, table, fields, manager):
