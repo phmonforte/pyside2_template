@@ -51,6 +51,7 @@ class SQLiteManager:
     - bit: will be converted to an integer
     - money: will be converted to an integer
     - real: will be kept as SQLite3 real
+    - pwd: will be kept as SQLite3 byte, hashed password, with salt
     """
 
     def __init__(self, database_file, model=None):
